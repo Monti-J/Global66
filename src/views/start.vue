@@ -37,14 +37,9 @@ export default {
   },
   methods:{
     start(){
-      this.cargando = true;
-      //Solo para mostrar la pantalla de carga al iniciar.
-      //En lugar del time out podría procesarse el login, por ejemplo.
-      setTimeout(() =>{
-        this.$router.push({
-          name: "home",
-        });
-      },2000);
+      this.$router.push({
+        name: "home",
+      });
     },
   }
 }

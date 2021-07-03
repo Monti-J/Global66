@@ -21,4 +21,8 @@ html, body{
 .fullHeight{
   height: 100%;
 }
+.tdClass{ 
+  padding-left: 10px; 
+  text-align: left;
+}
 </style>
