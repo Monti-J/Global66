@@ -1,18 +1,5 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <Loading/>
+  <div class="container-fluid fullHeight">
+    <h1>This will be a home page</h1>
   </div>
 </template>
-
-<script>
-// @ is an alias to /src
-import Loading from '@/components/loading.vue'
-
-export default {
-  name: 'Home',
-  components: {
-    Loading
-  }
-}
-</script>
