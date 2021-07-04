@@ -1,17 +1,18 @@
 <template>
-  <div class="container-fluid">
-    <div class="row justify-content-center">
+  <div class="container-fluid fullHeight">
+
+    <div v-if="!cargando" class="row justify-content-center">
       <div class="col-11 col-md-7 align-middle">
 
         <div class="input-group mb-3 mt-5">
           <div class="input-group-prepend">
-            <div class="input-group-text">
-              <b-icon-search />
+            <div class="input-group-text search">
+              <img src="@/assets/search.png">
             </div>
           </div>
           <input 
             type="text" 
-            class="form-control" 
+            class="form-control input-search" 
             aria-label="Text input with checkbox"
             placeholder="Search"
             @input="find()" 
@@ -30,46 +31,99 @@
               <b-row class="justify-content-center row-empty mt-3" align-h="center">
                 <h2><b>{{emptyTitle}}</b></h2>
                 <p>{{emptyText}}</p>
-                <b-col class="col-6 col-sm-6 col-md-5 col-lg-4">
+                <b-col class="col-8">
                   <button @click="backhome()" class="back-home-button">Go back Home</button>
                 </b-col>
               </b-row>
             </b-container>
           </template>
           
-          <template #cell(fav)="row" class="text-center">
+          <template #cell(fav)="row">
             <button @click="manageFav(row)" class="btn btn-sm">
               <img v-if="validarFav(row.item)" src="@/assets/fav-active.png">
               <img v-else src="@/assets/fav-disabled.png">
             </button>
           </template>
+          <template #cell(name)="row">
+            <a @click="showDetails(row)">
+              <div class="fullWidht">
+                {{ capitalChar(row.item.name)}}
+              </div>              
+            </a>
+          </template>
 
         </b-table>
-
       </div>
+      <div class="footer">
+        <b-container>
+          <b-row class="justify-content-md-center" align-h="between">
+            <b-col class="col-6 col-sm-6 col-md-5 col-lg-4 pt-2">
+              <button @click="alternButton('all')" class="btn btn-sm footer-button" :class="fullList ? 'clicked-button' : 'unclicked-button'">
+                <img src="@/assets/list.png" class="icons">
+                All
+              </button>
+            </b-col>
+            <b-col class="col-6 col-sm-6 col-md-5 col-lg-4 pt-2">
+              <button @click="alternButton('fav')" class="btn btn-sm footer-button" :class="fullList ? 'unclicked-button' : 'clicked-button'">
+                <img src="@/assets/star.png" class="icons">
+                Favorites               
+              </button>
+            </b-col>
+          </b-row>
+        </b-container>
+      </div>      
     </div>
 
-    <div  class="footer">
-      <b-container>
-        <b-row class="justify-content-md-center" align-h="between">
-          <b-col class="col-6 col-sm-6 col-md-5 col-lg-4">
-            <button @click="alternButton('all')" class="btn btn-sm footer-button" :class="fullList ? 'clicked-button' : 'unclicked-button'">
-              <i class="bi bi-list-ul"></i>
-              All
-            </button>
-          </b-col>
-          <b-col class="col-6 col-sm-6 col-md-5 col-lg-4">
-            <button @click="alternButton('fav')" class="btn btn-sm footer-button" :class="fullList ? 'unclicked-button' : 'clicked-button'">
-              <svg class="bi" width="32" height="32" fill="currentColor">
-                <use xlink:href="bootstrap-icons.svg#toggles"/>
-              </svg>
-              Favorites
-            </button>
-          </b-col>
+    <div v-else>
+      <loading />
+    </div>
+
+    <b-modal id="detailed-pokemon" centered hide-footer class="content-modal">
+      <template #modal-title>        
+        <img src="@/assets/fondo.png" class="img-fondo">
+        <img :src="pokemonSelected.img" class="img-pokemon">
+      </template>
+      <template #modal-header-close class="btn-close">
+        <img src="@/assets/btn-close.png">
+      </template> 
+      <div class="d-block text-center content-modal">
+        <b-row class="row-spec">
+          <div class="spec">
+            <b>Name: </b>{{ capitalChar(pokemonSelected.name)}}
+          </div>        
+          <hr>
+          <div class="spec">
+            <b>Weight: </b>{{pokemonSelected.weight}}
+          </div>
+          <hr>
+          <div class="spec">
+            <b>Height: </b>{{pokemonSelected.height}}
+          </div>
+          <hr>
+          <div class="spec">
+            <b>Types: </b>{{pokemonSelected.types}}
+          </div> 
+          <hr>        
         </b-row>
-      </b-container>
+        <b-container class="mt-3 row-spec">
+          <b-row>
+            <b-col class="col-8 pt-1">
+              <button 
+                class="btn btn-share" 
+                @click="copy()">
+                  Share to my friends
+              </button>
+            </b-col>
+            <b-col class="col-4">
+              <img v-if="validarFav(pokemonSelected)" src="@/assets/fav-active.png">
+              <img v-else src="@/assets/fav-disabled.png">            
+            </b-col>
+          </b-row>
+        </b-container>        
+      </div>
+        
+    </b-modal>
 
-    </div>
   </div>
 </template>
 
@@ -102,6 +156,7 @@ export default {
       filter: "",
       filterResult: [],
       fullList: true,
+      pokemonSelected: {},
     }
   },
   beforeMount(){
@@ -126,7 +181,7 @@ export default {
           this.$bvToast.toast("contenido", {
             title: "titulo",
             variant: "danger",
-            solid: true,
+            solid: true
           });
           this.cargando = false;
         });
@@ -167,6 +222,37 @@ export default {
     backhome(){
       this.filter = "";
       this.alternButton('all');
+    },
+    showDetails(row){
+      this.cargando = true;
+      axios
+        .get(row.item.url)
+        .then((response) => {
+          this.pokemonSelected.img = response.data.sprites.front_default;
+          this.pokemonSelected.name = row.item.name;
+          this.pokemonSelected.weight = response.data.weight;
+          this.pokemonSelected.height = response.data.height; 
+          let types = response.data.types.map((el) => {
+            return this.capitalChar(el.type.name);
+          });          
+          this.pokemonSelected.types = types.join(', ');
+          this.cargando = false;
+          this.$bvModal.show('detailed-pokemon');
+        })
+        .catch(() => {
+          this.$bvToast.toast("contenido", {
+            title: "titulo",
+            variant: "danger",
+            solid: true,
+          });
+          this.cargando = false;
+        });      
+    },
+    capitalChar(string){
+      if(string) return string.charAt(0).toUpperCase() + string.slice(1);
+    },
+    copy(){
+      //copy to clipboard TO DO   
     }
   }
 }
@@ -187,7 +273,7 @@ export default {
   padding: 0.4em 1em 0.4em 1em;
   border-radius: 30px;
   border: 0px;
-  width: 60%;
+  width: 75%;
 }
 .clicked-button{
   background-color: #f22539;
@@ -216,5 +302,56 @@ export default {
 }
 .rowClass{
   text-align: left;
+}
+.img-fondo{
+  max-width: 100%;
+  z-index: 1;
+  position:relative
+}
+.img-pokemon{
+  z-index: 2;
+  position:absolute;
+  top: 10%;
+  left: 40%;
+}
+.fullWidht{
+  width: 100%;
+}
+.row-spec{
+  width: 80%;
+  margin-left: 10%;
+}
+.spec{
+  text-align: left;
+}
+.btn-share{
+  color:white;
+  border-radius: 30px;
+  background-color: #f22539;
+  border: 0px;
+}
+.icons{
+  width: 15px;
+}
+hr{
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+.fav-col{
+  width: 20%;
+}
+.search{
+  background-color: white;
+  border-color: #ced4da;
+  border-right: 0px;
+  height: 100%;
+}
+.input-search{
+  border-left: 0px;
+}
+.input-search:focus{
+  outline: none;
+  box-shadow: none;
+  border-color: #ced4da;
 }
 </style>

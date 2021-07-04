@@ -22,7 +22,19 @@ html, body{
   height: 100%;
 }
 .tdClass{ 
-  padding-left: 10px; 
+  padding-left: 5%; 
   text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+.close {
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    margin-right: 3%;
+    margin-top: 4%;
+    top: 0;
+    background-color: transparent;
+    border: 0px;
 }
 </style>
